@@ -1,0 +1,58 @@
+---
+title: "SMDE LAB ASG1 question 2 ANOVA"
+author: "Miguel Alvarez"
+date: "23 de octubre de 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+
+Norm_v1=rnorm(200, mean=0, sd=1)
+Norm_v2=rnorm(200, mean=10, sd=1)
+Norm_v3=rnorm(200, mean=0, sd=1)
+
+Norm_v1n=data.frame(x1=Norm_v1, x2="v1")
+Norm_v2n=data.frame(x1=Norm_v2, x2="v2")
+Norm_v3n=data.frame(x1=Norm_v3, x2="v3")
+data=merge(Norm_v1n, Norm_v2n, common.only=FALSE)
+data=merge(as.data.frame(data), Norm_v3n, common.only=FALSE)
+
+AnovaModel.1 <- aov(x1 ~ x2, data=data)
+summary(AnovaModel.1)
+Boxplot(x1~x2, data=data, id.method="y")
+summary(cars)
+```
+```{r RegModel.1}
+#The observations within each sample must be independent.
+#Durbin Watson 
+library("lmtest", lib.loc="~/R/win-library/3.0")
+dwtest(RegModel.1, alternative ="two.sided")
+#The populations from which the samples are selected must be normal.
+#Shapiro test
+shapiro.test(residuals(RegModel.1))
+#The populations from which the samples are selected must have equal variances (homogeneity of variance)
+#Breusch Pagan test
+lmtest::bptest(RegModel.1)
+```
+
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

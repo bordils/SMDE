@@ -1,0 +1,109 @@
+---
+title: "Assignment 2 SMDE"
+author: "Miguel Alvarez"
+date: "1 de diciembre de 2018"
+output: html_document
+---
+[15:34, 21/11/2018] Nacho MIRI: en este assignment lo primero es coger el dataset del maraton, o de mas de un maraton si quieres tener mas datos y comparar temperaturas y demas
+[15:34, 21/11/2018] Nacho MIRI: y limpiar el dataset para tener los datos que te interesan
+[15:34, 21/11/2018] Nacho MIRI: queremos generar un modelo de regresión lineal por cada fragmento de la cursa
+[15:34, 21/11/2018] Nacho MIRI: es decir, uno para 0-5km, 5-10km, 10-15km...
+[15:34, 21/11/2018] Nacho MIRI: por lo que una de las cosas a hacer es calcular el tiempo que tarda cada corredor en cada fragmento
+[15:34, 21/11/2018] Nacho MIRI: y con eso generar el modelo de regresion
+[15:34, 21/11/2018] Nacho MIRI: el valor a predecir es el tiempo por fragmento, y las variables con las que jugaras seran edad, sexo, división en la que corren, temperatura...
+[15:34, 21/11/2018] Nacho MIRI: generas los modelos por cada fragmento y los validas con los tests
+[15:34, 21/11/2018] Nacho MIRI: una vez tenemos ya los modelos, los entramos al programilla GPSS o flexim o el que quieras
+[15:34, 21/11/2018] Nacho MIRI: y alli simularas la cursa para un corredor teniendo en cuenta los modelos que has generado
+[15:35, 21/11/2018] Nacho MIRI: lm (tiempo fragmento ~variables que quieras usar y sean significativas)
+[15:35, 21/11/2018] Nacho MIRI: los generas en R como en el ejericio 4
+[15:35, 21/11/2018] Nacho MIRI: y te quedas con las funciones
+[15:35, 21/11/2018] Nacho MIRI: en el GPSS simularas la cursa teniendo en cuenta los modelos que has generado, pero para tener una mejor simulación haremos más de una réplica, y para que el valor de salida varie un poco le añadiremos un poco de ruido, una distribución normal gausiana
+
+```{r}
+require(FactoMineR)
+library(tolerance)
+library(RcmdrMisc)
+library(lmtest)
+
+M2016=read.table("M2016.txt", header=TRUE, fill=TRUE)
+M2017=read.table("M2017.txt", header=TRUE, fill=TRUE)
+
+M2016 = na.omit(M2016)
+M2017 = na.omit(M2017)
+
+M2016[,"Age"]=as.numeric(as.character(M2016[,"Age"]))
+M2017[,"Age"]=as.numeric(as.character(M2017[,"Age"]))
+
+M2016[,"M.F"]=as.numeric(M2016[,"M.F"]=="M")
+M2017[,"M.F"]=as.numeric(M2017[,"M.F"]=="M")
+
+M2016[,"X5K"] =as.numeric(as.difftime(as.character.Date(M2016[,"X5K"]),   format='%H:%M:%S',units = "secs"))
+M2016[,"X10K"]=as.numeric(as.difftime(as.character.Date(M2016[,"X10K"]),  format='%H:%M:%S',units = "secs"))
+M2016[,"X15K"]=as.numeric(as.difftime(as.character.Date(M2016[,"X15K"]),  format='%H:%M:%S',units = "secs"))
+M2016[,"X20K"]=as.numeric(as.difftime(as.character.Date(M2016[,"X20K"]),  format='%H:%M:%S',units = "secs"))
+M2016[,"Half"]=as.numeric(as.difftime(as.character.Date(M2016[,"Half"]),  format='%H:%M:%S',units = "secs"))
+M2016[,"X25K"]=as.numeric(as.difftime(as.character.Date(M2016[,"X25K"]),  format='%H:%M:%S',units = "secs"))
+M2016[,"X30K"]=as.numeric(as.difftime(as.character.Date(M2016[,"X30K"]),  format='%H:%M:%S',units = "secs"))
+M2016[,"X35K"]=as.numeric(as.difftime(as.character.Date(M2016[,"X35K"]),  format='%H:%M:%S',units = "secs"))
+M2016[,"X40K"]=as.numeric(as.difftime(as.character.Date(M2016[,"X40K"]),  format='%H:%M:%S',units = "secs"))
+M2016[,"Pace"]=as.numeric(as.difftime(as.character.Date(M2016[,"Pace"]),  format='%H:%M:%S',units = "secs"))
+
+M2017[,"X5K"] =as.numeric(as.difftime(as.character.Date(M2017[,"X5K"]),   format='%H:%M:%S',units = "secs"))
+M2017[,"X10K"]=as.numeric(as.difftime(as.character.Date(M2017[,"X10K"]),  format='%H:%M:%S',units = "secs"))
+M2017[,"X15K"]=as.numeric(as.difftime(as.character.Date(M2017[,"X15K"]),  format='%H:%M:%S',units = "secs"))
+M2017[,"X20K"]=as.numeric(as.difftime(as.character.Date(M2017[,"X20K"]),  format='%H:%M:%S',units = "secs"))
+M2017[,"Half"]=as.numeric(as.difftime(as.character.Date(M2017[,"Half"]),  format='%H:%M:%S',units = "secs"))
+M2017[,"X25K"]=as.numeric(as.difftime(as.character.Date(M2017[,"X25K"]),  format='%H:%M:%S',units = "secs"))
+M2017[,"X30K"]=as.numeric(as.difftime(as.character.Date(M2017[,"X30K"]),  format='%H:%M:%S',units = "secs"))
+M2017[,"X35K"]=as.numeric(as.difftime(as.character.Date(M2017[,"X35K"]),  format='%H:%M:%S',units = "secs"))
+M2017[,"X40K"]=as.numeric(as.difftime(as.character.Date(M2017[,"X40K"]),  format='%H:%M:%S',units = "secs"))
+M2017[,"Pace"]=as.numeric(as.difftime(as.character.Date(M2017[,"Pace"]),  format='%H:%M:%S',units = "secs"))
+
+M2016$Temperature = 18
+M2017$Temperature = 12
+
+M2016$Wind = 12
+M2017$Wind = 14  
+  
+M2016$Year = 2016
+M2017$Year = 2017
+
+M2016 = subset(M2016, Age >= 25 & Age <= 35)
+M2017 = subset(M2017, Age >= 25 & Age <= 35)
+
+M = rbind (M2016, M2017)
+
+M = as.data.frame(M)
+colnames(M)=c("Name","Age", "Gender","Fk","Tk","Ftk","Twk","Half","Twfk","Thk","Thfk","Fok","Pace","Temperature","Wind","Year")
+
+M[,"Fok"] = M[,"Fok"] - M[,"Thfk"]
+M[,"Thfk"] = M[,"Thfk"] - M[,"Thk"]
+M[,"Thk"] = M[,"Thk"] - M[,"Twfk"]
+M[,"Twfk"] = M[,"Twfk"] - M[,"Twk"]
+M[,"Twk"] = M[,"Twk"] - M[,"Ftk"]
+M[,"Ftk"] = M[,"Ftk"] - M[,"Tk"]
+M[,"Tk"] = M[,"Tk"] - M[,"Fk"] 
+
+RMFk   = lm(Fk   ~ Gender + Pace, data=M)
+RMTk   = lm(Tk   ~ Age + Gender + Temperature + Pace, data=M)
+RMFtk  = lm(Ftk  ~ Age + Gender + Temperature + Pace, data=M)
+RMTwk  = lm(Twk  ~ Gender + Pace, data=M)
+RMTwfk = lm(Twfk ~ Gender + Temperature + Pace, data=M)
+RMThk  = lm(Thk  ~ Gender + Temperature + Pace, data=M)
+RMThfk = lm(Thfk ~ Gender + Pace, data=M)
+RMFok  = lm(Fok  ~ Age + Gender + Temperature + Pace, data=M)
+
+summary(RMFk)
+summary(RMTk)
+summary(RMFtk)
+summary(RMTwk)
+summary(RMTwfk)
+summary(RMThk)
+summary(RMThfk)
+summary(RMFok)
+
+```
+
+```{r}
+summary(M[,"Pace"])
+```
